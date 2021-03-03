@@ -1,20 +1,24 @@
-from aws_lambda_powertools import Logger
+from aws_lambda_powertools import Logger, logging
+import logging
 from psycopg2.extras import RealDictCursor
 from utils import Invocation
 from utils import Router
 import utils
 import psycopg2
 import sql
-from typing import Any, Optional, Dict
+from typing import Optional
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from psycopg2 import _connect
 
 log: Logger = Logger()
+Logger("botocore").setLevel(logging.INFO)
+Logger("urllib3").setLevel(logging.INFO)
+
 router: Router = Router()
 conn: Optional[_connect] = None
 
 # Handler
-@log.inject_lambda_context(log_event=True)
+@log.inject_lambda_context(log_event=False)
 def handler(event: dict, context: LambdaContext) -> dict:
     set_connection()
     return Invocation(router, event).call()
@@ -68,10 +72,10 @@ def set_connection():
             db_user, db_password = utils.get_db_credentials()
             log.info("user " + db_user)
             conn = psycopg2.connect(user=db_user,
-                                          password=db_password,
-                                          sslmode='prefer',
-                                          connect_timeout=3,
-                                          cursor_factory=RealDictCursor)
+                                    password=db_password,
+                                    sslmode='prefer',
+                                    connect_timeout=3,
+                                    cursor_factory=RealDictCursor)
             log.info("New DB connection created")
     except Exception as e:
         log.error(e)
