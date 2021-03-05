@@ -61,8 +61,8 @@ Resources:
       Handler: lambda_function.handler
       Runtime: python3.8
       CodeUri: ./src
-      Timeout: 5
-      MemorySize: 256
+      Timeout: 35
+      MemorySize: 128
       Tracing: Active
       VpcConfig:
         SecurityGroupIds:
@@ -108,7 +108,7 @@ Resources:
 
   # API Gateway (REST stuff) starts here
 
-  SimpleRoutingAPIGateway:
+  APIGateway:
     Type: "AWS::ApiGatewayV2::Api"
     Properties:
       Name: !Sub simple-rest-api-${StageName}
@@ -243,7 +243,7 @@ Outputs:
     Description: "The AppSync API ID"
     Value: !GetAtt GraphQLApi.ApiId
     Export:
-      Name: !Sub ${AWS::StackName}-GraphqlApiId-${StageName}
+      Name: !Sub ${AWS::StackName}-GraphQLApiId-${StageName}
 
   GraphQLUrlOutput:
     Description: "The GraphQL URL"

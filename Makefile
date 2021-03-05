@@ -58,7 +58,7 @@ deploy: print-stage build package
 
 
 invoke:
-	aws lambda invoke --invocation-type RequestResponse --function-name $(FUNCTION)-$(STAGE) --payload '{"fieldName": "listStudents", "args": {}}' --cli-binary-format raw-in-base64-out /dev/stdout
+	aws lambda invoke --invocation-type RequestResponse --function-name $(FUNCTION)-$(STAGE) --payload '{"route": "list_students", "args": {}}' --cli-binary-format raw-in-base64-out /dev/stdout
 
 
 # Run a custom event locally and see it's entire output. Good for iterating fast on your local machine.
