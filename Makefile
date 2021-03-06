@@ -21,14 +21,6 @@ print-stage:
 build:
 	sam build
 
-build-cdk: clean
-	cp -R src dist
-	pip install --no-deps --platform manylinux1_x86_64 -r src/requirements.txt -t dist/
-
-# Example for deploying with CDK instead of SAM
-deploy-cdk: build-cdk
-	cdk deploy --require-approval never
-
 
 package: build
 	@if test -z "$(STAGE)"; then echo "****** STAGE not set. Set STAGE with: export STAGE=env ******"; exit 1; fi

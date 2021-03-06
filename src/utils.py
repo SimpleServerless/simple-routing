@@ -155,34 +155,3 @@ def camelfy_object(object: dict) -> dict:
         else:
             new_object_dict[to_camel(key)] = object[key]
     return new_object_dict
-
-
-#
-# Database helpers
-#
-
-secret_client = boto3.client('secretsmanager')
-
-
-def get_db_credentials() -> tuple:
-    log.info('Retrieving db credentials from SecretsManager')
-    secret_key = "simple-serverless/db-credentials"
-    try:
-        get_secret_value_response = secret_client.get_secret_value(SecretId=secret_key)
-        log.debug("retrieved credentials")
-
-        # Depending on whether the secret is a string or binary, one of these fields will be populated.
-        if 'SecretString' in get_secret_value_response:
-            secret = get_secret_value_response['SecretString']
-            cred_dict = json.loads(secret)
-            return cred_dict['username'], cred_dict['password']
-        else:
-            decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
-            return decoded_binary_secret,
-
-    except ClientError as e:
-        print(e)
-        exit("Request failed ClientError retrieving {} : {}".format(secret_key, e))
-    except Exception as e:
-        print(e)
-        exit("Request failed Exception retrieving {} : {}".format(secret_key, e))

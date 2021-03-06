@@ -44,13 +44,9 @@ Mappings:
   Environment:
     dev:
       LogLevel: "INFO"
-      DBHost: "simple-serverless-aurora-serverless-development.cluster-cw3bjgnjhzxa.us-east-2.rds.amazonaws.com"
-      DBName: "simple_serverless_dev"
 
     prod:
       LogLevel: "INFO"
-      DBHost: "simple-serverless-aurora-serverless-production.cluster-cw3bjgnjhzxa.us-east-2.rds.amazonaws.com"
-      DBName: "simple_serverless_prod"
 
 Resources:
 
@@ -64,44 +60,19 @@ Resources:
       Timeout: 35
       MemorySize: 128
       Tracing: Active
-      VpcConfig:
-        SecurityGroupIds:
-          - Fn::ImportValue:
-              Fn::Sub: simple-serverless-database-us-east-2-${StageName}-AppSGId
-        SubnetIds:
-          - !Ref PrivateSubnet1
-          - !Ref PrivateSubnet2
-          - !Ref PrivateSubnet3
       Policies:
-        - VPCAccessPolicy: {}
 
         - Statement:
-            - Effect: Allow
-              Action:
-                - logs:CreateLogGroup
-                - logs:CreateLogStream
-                - logs:PutLogEvents
-              Resource: arn:aws:logs:*:*:*
-
-        - Statement:
-            - Effect: Allow
-              Action:
-                - xray:PutTraceSegments
-                - xray:PutTelemetryRecords
-              Resource: "*"
-
-        - Statement:
-            - Effect: Allow
-              Action:
-                - secretsmanager:GetSecretValue
-              Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:simple-serverless/*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
 
       Environment:
         Variables:
           STAGE: !Ref StageName
-          PGHOST: !FindInMap [Environment, !Ref StageName, DBHost]
-          PGPORT: 5432
-          PGDATABASE: !FindInMap [Environment, !Ref StageName, DBName]
           LOG_LEVEL: !FindInMap [Environment, !Ref StageName, LogLevel]
           POWERTOOLS_SERVICE_NAME: simple-serverless
 
@@ -109,67 +80,87 @@ Resources:
   # API Gateway (REST stuff) starts here
 
   APIGateway:
-    Type: "AWS::ApiGatewayV2::Api"
+    Type: AWS::ApiGatewayV2::Api
     Properties:
       Name: !Sub simple-rest-api-${StageName}
       ProtocolType: HTTP
+      # Target: "https://this.forces.creation.of.a.default.stage"
+
+  APIGatewayLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref LambdaFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${APIGateway}/*/*/*"
+    DependsOn:
+      - APIGateway
+      - LambdaFunction
+
+  APIGatewayStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: $default
+      Description: Default Stage
+      AutoDeploy: true
+      ApiId: !Ref APIGateway
 
   RestStudentIntegration:
-    Type: "AWS::ApiGatewayV2::Integration"
+    Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ApiId: !Ref SimpleRoutingAPIGateway
+      ApiId: !Ref APIGateway
       IntegrationType: "AWS_PROXY"
       IntegrationUri: !GetAtt LambdaFunction.Arn
       PayloadFormatVersion: 2.0
 
   RestDefaultRoute:
-    Type: "AWS::ApiGatewayV2::Route"
+    Type: AWS::ApiGatewayV2::Route
     Properties:
       RouteKey: "ANY /"
-      ApiId: !Ref SimpleRoutingAPIGateway
+      ApiId: !Ref APIGateway
       Target: !Sub 'integrations/${RestStudentIntegration}'
 
   RestListStudentsRoute:
-    Type: "AWS::ApiGatewayV2::Route"
+    Type: AWS::ApiGatewayV2::Route
     Properties:
       RouteKey: "GET /students"
-      ApiId: !Ref SimpleRoutingAPIGateway
+      ApiId: !Ref APIGateway
       Target: !Sub 'integrations/${RestStudentIntegration}'
 
   RestGetStudentRoute:
-    Type: "AWS::ApiGatewayV2::Route"
+    Type: AWS::ApiGatewayV2::Route
     Properties:
       RouteKey: "GET /students/{studentId}"
-      ApiId: !Ref SimpleRoutingAPIGateway
+      ApiId: !Ref APIGateway
       Target: !Sub 'integrations/${RestStudentIntegration}'
 
   RestSaveStudentRoute:
-    Type: "AWS::ApiGatewayV2::Route"
+    Type: AWS::ApiGatewayV2::Route
     Properties:
       RouteKey: "POST /students/{studentId}"
-      ApiId: !Ref SimpleRoutingAPIGateway
+      ApiId: !Ref APIGateway
       Target: !Sub 'integrations/${RestStudentIntegration}'
 
 
 
-  #   Appsync (GraphQL stuff) starts here
+  # Appsync (GraphQL stuff) starts here
 
   GraphQLApi:
-    Type: "AWS::AppSync::GraphQLApi"
+    Type: AWS::AppSync::GraphQLApi
     Properties:
       Name: !Sub simple-graphql-api-${StageName}
       AuthenticationType: API_KEY
       XrayEnabled: true
 
   GraphqlApiKey:
-    Type: "AWS::AppSync::ApiKey"
+    Type: AWS::AppSync::ApiKey
     Properties:
       Description: "Default API Key"
       ApiId: !GetAtt GraphQLApi.ApiId
 
   # Schema will get included with SAM PACKAGE command:
   Schema:
-    Type: "AWS::AppSync::GraphQLSchema"
+    Type: AWS::AppSync::GraphQLSchema
     Properties:
       ApiId: !GetAtt GraphQLApi.ApiId
       DefinitionS3Location: ./src/schema.graphql
@@ -197,7 +188,7 @@ Resources:
                 Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
 
   LambdaDataSource:
-    Type: "AWS::AppSync::DataSource"
+    Type: AWS::AppSync::DataSource
     Properties:
       ApiId: !GetAtt GraphQLApi.ApiId
       Name: !Sub ${DataSourceName}
@@ -208,7 +199,7 @@ Resources:
         LambdaFunctionArn: !Sub ${LambdaFunction.Arn}
 
   ListStudentsResolver:
-    Type: "AWS::AppSync::Resolver"
+    Type: AWS::AppSync::Resolver
     Properties:
       ApiId: !GetAtt GraphQLApi.ApiId
       TypeName: Query
@@ -216,7 +207,7 @@ Resources:
       DataSourceName: !GetAtt LambdaDataSource.Name
 
   GetStudentsResolver:
-    Type: "AWS::AppSync::Resolver"
+    Type: AWS::AppSync::Resolver
     Properties:
       ApiId: !GetAtt GraphQLApi.ApiId
       TypeName: Query
@@ -224,7 +215,7 @@ Resources:
       DataSourceName: !GetAtt LambdaDataSource.Name
 
   SaveStudentsResolver:
-    Type: "AWS::AppSync::Resolver"
+    Type: AWS::AppSync::Resolver
     Properties:
       ApiId: !GetAtt GraphQLApi.ApiId
       TypeName: Mutation
@@ -235,7 +226,7 @@ Resources:
 Outputs:
   RestAPIOutput:
     Description: "The url of the rest api"
-    Value: !GetAtt SimpleRoutingAPIGateway.ApiEndpoint
+    Value: !GetAtt APIGateway.ApiEndpoint
     Export:
       Name: !Sub ${AWS::StackName}-RestApiUrl-${StageName}
 
