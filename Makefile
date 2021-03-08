@@ -18,6 +18,16 @@ print-stage:
 	@echo
 
 
+clean:
+	@echo 'Removing crap'
+	rm -rf dist
+	rm -rf .aws-sam
+	rm -rf .pytest_cache
+	rm -rf tests/.pytest_cache
+	rm -rf src/__pycache__
+	rm -rf tests/integration/__pycache__
+
+
 build:
 	sam build
 
@@ -27,16 +37,6 @@ package: build
 	sam package \
 	--s3-bucket $(S3_BUCKET) \
 	--output-template-file "package.$(STAGE).yaml"
-
-
-clean:
-	@echo 'Removing crap'
-	rm -rf dist
-	rm -rf .aws-sam
-	rm -rf .pytest_cache
-	rm -rf tests/.pytest_cache
-	rm -rf src/__pycache__
-	rm -rf tests/integration/__pycache__
 
 
 deploy: print-stage build package
