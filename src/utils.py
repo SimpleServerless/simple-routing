@@ -1,7 +1,4 @@
 from datetime import datetime, date
-import boto3
-from botocore.exceptions import ClientError
-import base64
 import json
 import re
 from aws_lambda_powertools import Logger
@@ -82,6 +79,10 @@ class Router:
         elif 'routeKey' in event and self._rest_endpoint.get(event['routeKey']):
             log.info("Resolved rest route " + event['routeKey'])
             args: Dict[str, Any] = {}
+            if 'body' in event:
+                body_str = event['body']
+                body_dict = json.loads(body_str)
+                args.update(body_dict)
             if 'queryStringParameters' in event:
                 args.update(event['queryStringParameters'])
             if 'pathParameters' in event:

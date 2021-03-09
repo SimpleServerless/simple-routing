@@ -1,17 +1,19 @@
 # Simple Routing: Leason 1
-This repo is a companion to **Leason 1** in the "Simple Serverless" series and future lessons will build on the tools and patterns used here.
+This repo is a companion to **Recipe 1** in the "Simple Serverless" series and future lessons will build on the tools and patterns used here.
 I hope you find something here helpful, and please give this repo a star if you do. Thanks for checking it out.
 
 This repo contains a simple but complete pattern for using decorators to map REST and GrqphQL endpoints to a functions in lambdas. 
 You can use SAM and the included template.yaml file to deploy a fully functional API to AWS. 
 I was careful to favor resources that are only "pay for what you use" so there should be little or no reoccurring costs for this deployment.
 
-I also use this repo as a toolbox of tricks I've learned over the years to make developing lambdas fast and easy. You will
+I also use this repo as a toolbox of tricks I've learned over the years to make developing lambdas fast and easy. 
+
+You will
 find in this repo:
 - A pattern for mapping REST or GrqphQL endpoints to functions via a decorator ex: `@router.rest("GET", "/students")`
-- All the IaC needed to deploy fully functional APIs via SAM which is an AWS extension of CloudFormation
+- All the infrastructure as code needed to deploy fully functional APIs via SAM which is an AWS extension of CloudFormation
 - A simple script that makes it easy to iterate and debug locally
-- Commands to invoke a deployed lambda and tail its logs in real time.
+- Commands to invoke a deployed lambda and tail its logs in realtime.
 
 
 

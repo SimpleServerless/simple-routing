@@ -43,8 +43,18 @@ def get_student(args: dict) -> dict:
 @router.rest("PUT", "/students/{studentId}") # Resolves for a ReST endpoint
 @router.graphql("Mutation", "saveStudent")
 def save_student(args: dict) -> dict:
-    # Save a dog
-    return {'statusCode': 202}
+    student = args['student']
+
+    # Cover key from either REST path params and GrqphQL inputs
+    if 'studentId' in args: # REST
+        key = int(args['studentId'])
+        student['studentId'] = key
+    else: # GraphQL or Direct
+        key = student['studentId']
+
+    # Add or update student data for given key
+    students[key] = student
+    return students[key]
 
 
 students: dict = {
