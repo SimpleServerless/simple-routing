@@ -1,4 +1,31 @@
 # Simple Routing: Lesson 1
+I often see developers embedding web servers like Flask or Express in lambdas just to have a more elegant routing mechanism.
+Example: 
+```
+app = Flask(__name__)
+@app.route('/students', methods = ['GET', 'POST'])
+def list_studnets():
+  ...
+  return response
+```
+There are a few downsides to a choice like this.
+1. Applied to a simple lambda that's otherwise only 20K in size these frameworks and their dependencies can add several megabytes to the
+   package size which impacts the cold start times.  This can also increase invoke times or memory requirements and therefore the costs to a point where 
+   your code only accounts for a fraction of the overhead you're paying for.
+2. Lambdas were designed to be light and ephemeral, web servers are designed to run on more substantial long-lasting servers, and
+often this mismatch becomes a production issue.
+3. They make the lambdas less reusable by forcing the input to be http like. If you would like to reuse this function by
+doing a direct invoke from another lambda you now have to add headers, query parmeters, a body... to your request payload to give it what it wants.
+4. Embedding servers in a serverless function just sounds wrong doesn't it?
+
+The goal of this project is to show that you can have an elegant routing decorator that supports REST and GraphQL with about 100 lines of your own code.
+This will leave your lambda light, and reusable should you want to also use it without a REST or GrqphQL API.
+
+# Objectives
+- Demonstrate how to implement a routing decorator that supports REST and Graphql APIs.
+- Demonstrate how to reuse the endpoints for direct invokes with clean request payloads.
+
+# What is in this repo
 This repo is a companion to **Lesson 1** in the "Simple Serverless" series and future lessons will build on the tools and patterns used here.
 I hope you find something here helpful, and please give this repo a star if you do. Thanks for checking it out.
 
@@ -85,6 +112,7 @@ and other resources they depend on.
 
 # Deploy
 ```
+export set STAGE=dev
 git clone git@github.com:SimpleServerless/simple-routing.git
 cd simple-routing
 make deploy
@@ -119,6 +147,9 @@ You can run this script in an IDE to execute lambda_function.handler locally, se
 
 
 # Make Targets
+Most make targets require that you export a `STAGE` variable (dev, prod, test...). 
+This makes it easier to deploy a stacks for multiple environments on the same AWS account.
+
 **clean:** Removes artifacts that are created by testing and deploying
 
 **build:** Uses SAM to build and prepare for packaging
